@@ -16,6 +16,7 @@ public class TCPClient {
     //---------End of Task 2 ------------
     
     public byte[] askServer(String hostname, int port, byte [] toServerBytes) throws IOException {
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         //----Task 2: Socket Setup with Timeout Support----
         try (Socket socket = new Socket(hostname, port)) {
             if (timeout != null) {
@@ -24,39 +25,50 @@ public class TCPClient {
             //----End of Task 2 ----
             
             // Task 1
-            else if (toServerBytes != null) {
+            if (toServerBytes != null) {
                 OutputStream output = socket.getOutputStream();
                 output.write(toServerBytes); // Send the data to the server
                 output.flush(); // Ensure all data is transmitted
             }
             
             //----Task 2 Close connection if shutdown----
-            else if (shutdown) {
+            if (shutdown) {
                 socket.shutdownOutput(); //Stops new data from being sent
             }
             //----Task 2 End----
 
             int bytesRead;
             int bytesTotal = 0; // Task 2: Tracks total received bytes
+            int counter = 0;//Task 2: Counts amount of reads
+            int maxCount = 100; //Task 2: Max amount of reads, no loops
 
             InputStream input = socket.getInputStream();  // Server response stream
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
             byte[] bufferT = new byte[1024]; // Temporary buffer to store incoming data 
 
-            while ((bytesRead = input.read(bufferT)) != -1) { // Read incoming data
-                //----Task 2 data limit----
-                if (limit != null && bytesTotal + bytesRead > limit) {
-                    byteStream.write(bufferT, 0, limit - bytesTotal); // Stop reading once limit is reached
-                    break;
-                }
-                else {
+            try{
+                while ((bytesRead = input.read(bufferT)) != -1) { // Read incoming data
+                    //----Task 2 data limit----
+                    if (limit != null && bytesTotal + bytesRead > limit) {
+                        byteStream.write(bufferT, 0, limit - bytesTotal); // Stop reading once limit is reached
+                        break;
+                    }
                     byteStream.write(bufferT, 0, bytesRead); // Store received data
+                    bytesTotal += bytesRead; // Update total bytes received
+                    counter++; // Counts how many reads
+
+                    if (counter >= maxCount) {  // If the amount of reads surpasses the allowed amount then break
+                        System.out.println("Max read count reached, stopping.");
+                        break;
+                    }
+                    //----Task 2 End----
                 }
-                bytesTotal += bytesRead; // Update total bytes received
-                //----Task 2 End----
+            }
+            catch (SocketTimeoutException e) {
+                System.out.println("Timeout reached, returning received data.");
             }
             return byteStream.toByteArray(); // Convert the collected data to a byte array and return it
         }
+         
     }
 
     public byte[] askServer(String hostname, int port) throws IOException {//Connecting without sending data
