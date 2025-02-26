@@ -1,5 +1,6 @@
 package tcpclient;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.io.*;
 
 public class TCPClient {
@@ -46,13 +47,17 @@ public class TCPClient {
             byte[] bufferT = new byte[1024]; // Temporary buffer to store incoming data 
 
             try{
-                while ((bytesRead = input.read(bufferT)) != -1) { // Read incoming data
-                    //----Task 2 data limit----
+                while ((bytesRead = input.read(bufferT)) != -1) {
+                    System.out.println("DEBUG: Read " + bytesRead + " bytes from server");
+                    System.out.println("DEBUG: Data received: " + new String(bufferT, 0, bytesRead));
+                                    //----Task 2 data limit----
                     if (limit != null && bytesTotal + bytesRead > limit) {
                         byteStream.write(bufferT, 0, limit - bytesTotal); // Stop reading once limit is reached
                         break;
                     }
                     byteStream.write(bufferT, 0, bytesRead); // Store received data
+                    System.out.println("DEBUG: Writing " + bytesRead + " bytes to byteStream");
+
                     bytesTotal += bytesRead; // Update total bytes received
                     counter++; // Counts how many reads
 
@@ -66,7 +71,10 @@ public class TCPClient {
             catch (SocketTimeoutException e) {
                 System.out.println("Timeout reached, returning received data.");
             }
-            return byteStream.toByteArray(); // Convert the collected data to a byte array and return it
+            byte[] responseBytes = byteStream.toByteArray();
+            System.out.println("DEBUG: TCPClient sending back " + responseBytes.length + " bytes to HTTPAsk");
+            System.out.println("DEBUG: TCPClient final data: " + new String(responseBytes, StandardCharsets.UTF_8));
+            return responseBytes;
         }
          
     }
