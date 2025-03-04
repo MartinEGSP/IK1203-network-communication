@@ -56,7 +56,7 @@ public class HTTPAsk {
                     // Parse request
                     String queryString = requestParts[1];
                     if (!queryString.startsWith("/ask?")) {
-                        sendResponse(out, 400, "Invalid endpoint");
+                        sendResponse(out, 404, "Not Found"); // ✅ Changed from 400 to 404
                         continue;
                     }
 
@@ -129,7 +129,7 @@ public class HTTPAsk {
 
     // Send HTTP response
     private static void sendResponse(OutputStream out, int statusCode, String message) throws IOException {
-        String statusText = (statusCode == 200) ? "OK" : "Bad Request";
+        String statusText = (statusCode == 200) ? "OK" : (statusCode == 404 ? "Not Found" : "Bad Request");
 
         if (!message.endsWith("\n")) {
             message += "\n";
