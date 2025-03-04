@@ -56,7 +56,7 @@ public class HTTPAsk {
                     // Parse request
                     String queryString = requestParts[1];
                     if (!queryString.startsWith("/ask?")) {
-                        sendResponse(out, 404, "Not Found"); // ✅ Changed from 400 to 404
+                        sendResponse(out, 400, "Bad Request");
                         continue;
                     }
 
