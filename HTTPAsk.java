@@ -19,7 +19,6 @@ public class HTTPAsk {
 
             while (true) { // Keep running and accept clients
                 Socket clientConnection = serverSocket.accept();
-                System.out.println("Client connected!");
 
                 try (
                     BufferedReader in = new BufferedReader(new InputStreamReader(clientConnection.getInputStream()));
@@ -32,7 +31,6 @@ public class HTTPAsk {
                         continue;
                     }
 
-                    System.out.println("Received request: " + requestLine);
                     String[] requestParts = requestLine.split(" ");
                     if (requestParts.length < 2) {
                         sendResponse(out, 400, "Bad Request");
@@ -56,7 +54,7 @@ public class HTTPAsk {
                     // Parse request
                     String queryString = requestParts[1];
                     if (!queryString.startsWith("/ask?")) {
-                        sendResponse(out, 400, "Bad Request");
+                        sendResponse(out, 404, "Not Found");
                         continue;
                     }
 
@@ -87,21 +85,12 @@ public class HTTPAsk {
                     int timeout = params.containsKey("timeout") ? Integer.parseInt(params.get("timeout")) : 0;
                     int limit = params.containsKey("limit") ? Integer.parseInt(params.get("limit")) : 0;
 
-                    System.out.println("DEBUG: Calling TCPClient.askServer with:");
-                    System.out.println(" - Hostname: " + hostname);
-                    System.out.println(" - Port: " + serverPort);
-                    System.out.println(" - Message: '" + message + "'");
-                    System.out.println(" - Shutdown: " + shutdown);
-                    System.out.println(" - Timeout: " + timeout);
-                    System.out.println(" - Limit: " + limit);
-
                     // Call TCPClient
                     try {
                         TCPClient client = new TCPClient(shutdown, timeout, limit);
                         byte[] serverResponseBytes = client.askServer(hostname, serverPort, message.getBytes(StandardCharsets.UTF_8));
                         String serverResponse = new String(serverResponseBytes, StandardCharsets.UTF_8);
 
-                        System.out.println("DEBUG: Response from TCPClient: " + serverResponse);
                         sendResponse(out, 200, serverResponse);
                     } catch (IOException e) {
                         sendResponse(out, 404, "Error contacting server: " + e.getMessage());
@@ -129,20 +118,17 @@ public class HTTPAsk {
 
     // Send HTTP response
     private static void sendResponse(OutputStream out, int statusCode, String message) throws IOException {
-        String statusText = (statusCode == 200) ? "OK" : (statusCode == 404 ? "Not Found" : "Bad Request");
-
-        if (!message.endsWith("\n")) {
-            message += "\n";
+        String httpResponse;
+        if (statusCode == 404) {
+            httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n"; // ✅ Matches your friend's output
+        } else {
+            httpResponse = "HTTP/1.1 " + statusCode + " " + (statusCode == 400 ? "Bad Request" : "OK") + "\r\n" +
+                           "Content-Type: text/plain\r\n" +
+                           "Content-Length: " + message.length() + "\r\n" +
+                           "Connection: close\r\n" +
+                           "\r\n" +
+                           message;
         }
-
-        String httpResponse = "HTTP/1.1 " + statusCode + " " + statusText + "\r\n" +
-                              "Content-Type: text/plain\r\n" +
-                              "Content-Length: " + message.length() + "\r\n" +
-                              "Connection: close\r\n" +
-                              "\r\n" +
-                              message;
-
-        System.out.println("DEBUG: Sending HTTP Response:\n" + httpResponse);
         out.write(httpResponse.getBytes(StandardCharsets.UTF_8));
         out.flush();
     }
