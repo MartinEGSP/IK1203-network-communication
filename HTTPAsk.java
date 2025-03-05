@@ -120,7 +120,7 @@ public class HTTPAsk {
     private static void sendResponse(OutputStream out, int statusCode, String message) throws IOException {
         String httpResponse;
         if (statusCode == 404) {
-            httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n"; // ✅ Matches your friend's output
+            httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n"; 
         } else {
             httpResponse = "HTTP/1.1 " + statusCode + " " + (statusCode == 400 ? "Bad Request" : "OK") + "\r\n" +
                            "Content-Type: text/plain\r\n" +
